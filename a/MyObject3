@@ -1,0 +1,53 @@
+import java.util.List;
+
+public class MyObject3 {
+
+	int port;
+	List<RouteInfo> routes;
+
+	public MyObject3(int port, List<RouteInfo> routeList) {
+		super();
+		this.port = port;
+		this.routes = routeList;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
+	}
+
+	public List<RouteInfo> getRoutes() {
+		return routes;
+	}
+
+	public void setRoutes(List<RouteInfo> routeList) {
+		this.routes = routeList;
+	}
+
+	public static class RouteInfo {
+		
+		public RouteInfo(String pathPrefix, String url) {
+			super();
+			this.pathPrefix = pathPrefix;
+			this.url = url;
+		}
+		String pathPrefix;
+		String url;
+		
+		public String getPathPrefix() {
+			return pathPrefix;
+		}
+		public void setPathPrefix(String pathPrefix) {
+			this.pathPrefix = pathPrefix;
+		}
+		public String getUrl() {
+			return url;
+		}
+		public void setUrl(String url) {
+			this.url = url;
+		}
+	}
+}
