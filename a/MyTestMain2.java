@@ -9,10 +9,9 @@ public class MyTestMain2 {
 	
 	public static void main(String[] args) throws IOException {
 		
-    MyTestMain2 myTestMain2 = new MyTestMain2();
+    		MyTestMain2 myTestMain2 = new MyTestMain2();
 		while(true) {
 			Scanner scanner = new Scanner(System.in);
-
 			String inputStr = scanner.nextLine();
 			String name = inputStr.split(" ")[0];
 			String path = inputStr.split(" ")[1];
