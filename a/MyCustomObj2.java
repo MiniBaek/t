@@ -1,9 +1,9 @@
-public class MyCustomObj {
+public class MyCustomObj2 {
 
 	String name;
 	String path;
 	
-	MyCustomObj(String name, String path){
+	MyCustomObj2(String name, String path){
 		this.name = name;
 		this.path = path;
 	}
