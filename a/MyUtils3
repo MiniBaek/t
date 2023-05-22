@@ -16,7 +16,7 @@ import org.eclipse.jetty.http.HttpMethod;
 import com.google.gson.Gson;
 import com.lgcns.test.RoutingRuleInfo.RouteInfo;
 
-public class MyUtils {
+public class MyUtils3 {
 
 	static MyObject3 myObject3;
 	
