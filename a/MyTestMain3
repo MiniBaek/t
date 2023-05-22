@@ -14,7 +14,7 @@ public class MyTestMain3 {
 			String fileContents= MyUtils3.readAllOfFile(args[0]); 
 			
 			// Routing Info 파일에서 Port번호를 읽어온다.
-			int port = MyUtils3.convertToObjectFromString(fileContents, RoutingRuleInfo.class).getPort();
+			int port = MyUtils3.convertToObjectFromString(fileContents, MyObject3.class).getPort();
 			
 			// 서버시작(Parameter : Port 번호)
 			myTestMain3.start(port, fileContents);
@@ -42,7 +42,7 @@ public class MyTestMain3 {
 		ServletHandler servletHandler = new ServletHandler();
 
 		// 서블릿 등록 방법 : ServletHolder 를 통해 Servlet Class를 등록 : 서블릿생성시 초기 파리미터를 넘겨줄때 사용.
-		ServletHolder myServletHolder = new ServletHolder(MyServlet.class); //서블릿클래스를 Holder 에 등록
+		ServletHolder myServletHolder = new ServletHolder(MyServlet3.class); //서블릿클래스를 Holder 에 등록
 		myServletHolder.setInitParameter("routingRuleInfo", routingRuleInfo); //파일로 읽은 문자열을 초기 파라메터로 증록
 		servletHandler.addServletWithMapping(myServletHolder, "/"); //ServletHolder를 핸들러에 등록.
 		
