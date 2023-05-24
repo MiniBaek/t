@@ -1,0 +1,29 @@
+import java.io.IOException;
+import java.util.List;
+import java.util.Scanner;
+
+public class MyTestMain1 {
+
+	public static void main(String[] args) {
+
+		while(true) {
+			
+			try {
+				Scanner scanner = new Scanner(System.in);
+				
+				System.out.println("Input Proxy Name...");
+				String proxyName = scanner.nextLine();
+				List<String> resultMsgList = MyUtils.readFilePerLine(proxyName);
+				
+				for(int i = 0 ; i<resultMsgList.size() ; i++) {
+					List<String> serviceList = MyUtils.readFilePerLine(resultMsgList.get(i));
+					for(int j = 0 ; j<serviceList.size() ; j++) {
+						System.out.println(serviceList.get(j));
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+}
