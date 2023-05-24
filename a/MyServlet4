@@ -1,0 +1,348 @@
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Response;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+public class MyServlet extends HttpServlet {
+
+	private static final long serialVersionUID = 1L;
+	
+	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		//printRequestInfo(req);
+
+		String reqURI, routingRuleInfoStr, serviceURL = null;
+		
+		// 헤더정보 가져오기
+		Map<String, String> header = MyUtils.getHeader(req);
+		String x_requestId = header.get("x-requestId");
+		String lastReqUrl = header.get("x-url");
+		
+		// PROXY Server 수신이력생성
+		TraceResult proxyTrace = new TraceResult(req.getRequestURL().toString(), "100", null);
+		MyUtils.addNewTraceResult(x_requestId, lastReqUrl, proxyTrace);
+		
+		//마지막요청 URL정보 업데이트
+		lastReqUrl = req.getRequestURL().toString();
+		
+		// 요청URI 읽기
+		reqURI = req.getRequestURI(); //요청URI
+		
+		// 초기파라미터로 설정한 값을 불러오기 : routing Info
+		routingRuleInfoStr = getInitParameter("routingRuleInfo");
+		
+		// /front 요청처리 : GET으로 요청된 건을 수신하여, GET으로 front 서비스를 호출한다.
+		if (reqURI.equals("/front")) {
+			
+			try {
+				
+				serviceURL = findTargetServiceUrl(req, routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL, header);
+				
+				// 응답결과 설정 : 서비스 호출 결과가 ㄱ솓 Proxy호출 결과
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+
+		// /auth 요청처리
+		else if (reqURI.equals("/auth")) {
+			
+			try {
+
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL, header);
+				
+				// 응답결과 설정 : 서비스 호출 결과가 ㄱ솓 Proxy호출 결과
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+		
+		// /auth/lgcns 요청처리
+		else if (reqURI.equals("/auth/lgcns")) {
+			
+			try {
+
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL, header);
+				
+				// 응답결과 설정 : 서비스 호출 결과가 ㄱ솓 Proxy호출 결과
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+		
+		// /notice 요청처리
+		else if (reqURI.equals("/notice")) {
+			
+			try {
+				
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL, header);
+				
+				// 응답결과 설정 : 서비스 호출 결과가 ㄱ솓 Proxy호출 결과
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+		
+		else if (reqURI.startsWith("/trace")) {
+			
+			Gson gson = new GsonBuilder()
+				    .setPrettyPrinting()
+				    .create();
+			
+			String requestId = reqURI.split("/")[2];
+			String fileName = "c://tmp/history_" + requestId + ".json";
+			String fileContents = MyUtils.readAllOfFile(fileName);
+			TraceResult traceResult = gson.fromJson(fileContents, TraceResult.class);
+			res.setStatus(200);
+			res.getWriter().write(gson.toJson(traceResult));
+		}
+	}
+	
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		printRequestInfo(req);
+
+		String reqURI, routingRuleInfoStr, serviceURL = null;
+		
+		// 헤더정보 가져오기
+		Map<String, String> header = MyUtils.getHeader(req);
+		String x_requestId = header.get("x-requestId");
+		String lastReqUrl = header.get("x-url");
+		
+		// PROXY Server 수신이력생성
+		TraceResult proxyTrace = new TraceResult(req.getRequestURL().toString(), "100", null);
+		MyUtils.addNewTraceResult(x_requestId, lastReqUrl, proxyTrace);
+		
+		// 마지막요청 URL정보 업데이트
+		lastReqUrl = req.getRequestURL().toString();
+		
+		// 요청URI 읽기
+		reqURI = req.getRequestURI(); //요청URI
+		
+		// 초기파라미터로 설정한 값을 불러오기 : routing Info
+		routingRuleInfoStr = getInitParameter("routingRuleInfo");
+		
+		if (req.getRequestURI().equals("/front")) {
+			
+			//request body 내용을 Json String 향태로 수신
+			String jsonStr = MyUtils.getHttpBodyInString(req);
+			
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> map = MyUtils.convertFromJsonStringToMap(jsonStr);
+
+			// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+			try {
+				
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL, header);
+				
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+			
+		}else if (req.getRequestURI().equals("/auth")) {
+			
+			//request body 내용을 Json String 향태로 수신
+			String jsonStr = MyUtils.getHttpBodyInString(req);
+			
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> map = MyUtils.convertFromJsonStringToMap(jsonStr);
+						
+			try {
+				
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL, header);
+				
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		
+		}else if (req.getRequestURI().equals("/auth/lgcns")) {
+			
+			//request body 내용을 Json String 향태로 수신
+			String jsonStr = MyUtils.getHttpBodyInString(req);
+			
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> map = MyUtils.convertFromJsonStringToMap(jsonStr);
+						
+			try {
+				
+				serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+				
+				//호출할 URL 이력생성
+				TraceResult serviceTrace = new TraceResult(serviceURL, "100", null);
+				MyUtils.addNewTraceResult(x_requestId, lastReqUrl, serviceTrace);
+				
+				header.put("x-url", serviceURL);
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL, header);
+				
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+				
+				//proxy Trace 상태업데이트
+				proxyTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, proxyTrace);
+				
+				//Service Trace 상태업데이트
+				serviceTrace.setStatus(contentRes.getStatus()+"");
+				MyUtils.updateStatusOfTraceResult(x_requestId, serviceTrace);
+				
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		
+		}else if (req.getRequestURI().equals("/notice")) {
+			
+		}
+	}
+	
+	private String findTargetServiceUrl(HttpServletRequest req, String routingRuleInfoStr) throws IOException {
+
+		// 요청받은 URI를 KEY로 대상 Service URL정보를 ROUTING INFO 로 부터 찾아온다.
+		// URL 값의 첫번째만 가지고 서비스를 구분하여 제공한다.
+		String targetServiceURL = MyUtils.findTargetServiceUrl("/" + req.getRequestURI().toString().split("/")[1], routingRuleInfoStr);
+		
+		//System.out.println("[TargetServiceURL] : " + targetServiceURL);
+
+		String serviceURL = targetServiceURL + req.getRequestURI();
+
+		//Query String 이 있는지 확인
+		if(null != req.getQueryString()) { 
+			serviceURL = serviceURL + "?" + req.getQueryString();
+		}
+		//System.out.println("[ServiceURL] : "+ serviceURL);
+
+		return serviceURL;
+	}
+	
+	private void printRequestInfo(HttpServletRequest req) {
+		
+		System.out.println("----------------------------------------");
+		System.out.println("[Time] : "+ System.currentTimeMillis());
+		System.out.println("[RequestURL] : "+ req.getRequestURL());
+		System.out.println("[RequestURI] : "+ req.getRequestURI());
+		
+		System.out.println("[RequestId] : "+ req.getHeader("x-requestId"));
+		System.out.println("[LastRequestURL] : "+ req.getHeader("x-url"));
+		
+	}
+	
+}
