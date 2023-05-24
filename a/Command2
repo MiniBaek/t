@@ -1,0 +1,23 @@
+public class Command {
+
+	String proxyName;
+	String path;
+	
+	Command(String proxyName, String path){
+		this.proxyName = proxyName;
+		this.path = path;
+	}
+	
+	public String getProxyName() {
+		return proxyName;
+	}
+	public void setProxyName(String proxyName) {
+		this.proxyName = proxyName;
+	}
+	public String getPath() {
+		return path;
+	}
+	public void setPath(String path) {
+		this.path = path;
+	}
+}
