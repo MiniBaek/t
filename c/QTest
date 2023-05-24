@@ -1,0 +1,164 @@
+package com.lgcns.test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class QTest {
+
+	Map<String,LimitedQueue> queueMap = new HashMap<String, LimitedQueue>();
+	MyUtils util = new MyUtils();
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		QTest runManager = new QTest();
+		runManager.start();
+	}
+
+	private void start() {
+		/*
+		System.out.println(createQueue("AAA", 3));
+		System.out.println(createQueue("AAA", 3));
+		System.out.println(createQueue("BBB", 2));
+		System.out.println(sendQueue("AAA", "message #1"));
+		System.out.println(sendQueue("AAA", "message #2"));
+		System.out.println(sendQueue("BBB", "message #3"));
+		System.out.println(sendQueue("AAA", "message #4"));
+		System.out.println(sendQueue("AAA", "message #5"));
+		System.out.println(receiveQueue("AAA"));
+		System.out.println(receiveQueue("BBB"));
+		System.out.println(receiveQueue("AAA"));
+		System.out.println(confirmMessage("AAA","1"));
+		System.out.println(recoveryMessage("AAA","2"));
+		*/
+		
+		System.out.println(createQueue("PLAY",15));
+		System.out.println(createQueue("LOG",10));
+		System.out.println(createQueue("PLAY",5));
+		System.out.println(sendQueue("PLAY","Message #0"));
+		System.out.println(sendQueue("LOG","Log msg #0"));
+		System.out.println(sendQueue("PLAY","Message #1"));
+		System.out.println(sendQueue("LOG","Log msg #1"));
+		System.out.println(sendQueue("PLAY","Message #2"));
+		System.out.println(sendQueue("LOG","Log msg #2"));
+		System.out.println(sendQueue("PLAY","Message #3"));
+		System.out.println(sendQueue("LOG","Log msg #3"));
+		System.out.println(sendQueue("PLAY","Message #4"));
+		System.out.println(sendQueue("LOG","Log msg #4"));
+		System.out.println(sendQueue("PLAY","Message #5"));
+		System.out.println(sendQueue("LOG","Log msg #5"));
+		System.out.println(sendQueue("PLAY","Message #6"));
+		System.out.println(sendQueue("LOG","Log msg #6"));
+		System.out.println(sendQueue("LOG","Log msg #7"));
+		System.out.println(sendQueue("PLAY","Message #7"));
+		System.out.println(sendQueue("LOG","Log msg #8"));
+		System.out.println(sendQueue("PLAY","Message #8"));
+		System.out.println(sendQueue("LOG","Log msg #9"));
+		System.out.println(sendQueue("PLAY","Message #9"));
+		System.out.println(sendQueue("PLAY","Message #10"));
+		System.out.println(sendQueue("PLAY","Message #11"));
+		System.out.println(sendQueue("PLAY","Message #12"));
+		System.out.println(sendQueue("PLAY","Message #13"));
+		System.out.println(sendQueue("PLAY","Message #14"));
+		System.out.println(sendQueue("PLAY","Message #15"));
+		System.out.println(sendQueue("PLAY","Message #16"));
+		System.out.println(sendQueue("PLAY","Message #17"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(receiveQueue("LOG"));
+		System.out.println(receiveQueue("PLAY"));
+		System.out.println(recoveryMessage("LOG","7"));
+		System.out.println(recoveryMessage("PLAY","9"));
+		System.out.println(confirmMessage("PLAY","0"));
+		System.out.println(confirmMessage("LOG","0"));
+	}
+	
+	private String recoveryMessage(String queueName, String messageId) {
+		// TODO Auto-generated method stub
+		String result = "OK";
+		if(null != queueMap.get(queueName)) {
+			result = queueMap.get(queueName).recovery(messageId);
+		}else {
+			result = "Not found Queue";
+		}
+		String jsonStr = util.convertResulttoJsonString(result);
+		return jsonStr;
+	}
+
+	private String confirmMessage(String queueName, String messageId) {
+		String result = "OK";
+		if(null != queueMap.get(queueName)) {
+			result = queueMap.get(queueName).subConfirm(messageId, queueName);
+		}else {
+			result = "Not found Queue";
+		}
+		String jsonStr = util.convertResulttoJsonString(result);
+		return jsonStr;
+	}
+
+	private String createQueue(String queueName, int queueSize) {
+		
+		String result = "OK";
+		if(null == queueMap.get(queueName)) {
+			LimitedQueue queue = new LimitedQueue(queueSize);
+			queueMap.put(queueName, queue);
+		}else {
+			result = "Queue Exist";
+		}
+		
+		String jsonStr = util.convertResulttoJsonString(result);
+		
+		return jsonStr;
+	}
+	
+	private String sendQueue(String queueName, String message) {
+		
+		String result = "OK";
+		if(null == queueMap.get(queueName)) {
+			result = "Queue Not Exist";
+		}else {
+			result = queueMap.get(queueName).add(message);
+		}
+		
+		String jsonStr = util.convertResulttoJsonString(result);
+		
+		return jsonStr;
+	}
+	
+	private String receiveQueue(String queueName) {	
+		
+		String result = "OK";
+		String message = null;
+		String jsonStr = null;
+			
+		if(null == queueMap.get(queueName)) {
+			result = "Queue Not Exist";
+		}else {
+			message = queueMap.get(queueName).sub();
+			if(null == message) {
+				result = "No Message";
+				jsonStr = util.convertResulttoJsonString(result);
+			}else {
+				jsonStr = util.convertResulttoJsonString(result, message.split("#")[1], message);
+			}
+		}
+		System.out.println("message : " + message);
+		
+		return jsonStr;
+	}
+
+}
