@@ -1,0 +1,226 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.client.api.ContentResponse;
+
+public class MyServlet extends HttpServlet {
+
+	private static final long serialVersionUID = 1L;
+
+	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		String reqURI, routingRuleInfoStr, serviceURL = null;
+
+		System.out.println("[RequestURL] : "+ req.getRequestURL());
+		System.out.println("[RequestURI] : "+ req.getRequestURI());
+		System.out.println("[RoutingRuleInfo] : "+ getInitParameter("routingRuleInfo"));
+
+		// 요청URI 읽기
+		reqURI = req.getRequestURI(); //요청URI
+
+		// 초기파라미터로 설정한 값을 불러오기 : routing Info
+		routingRuleInfoStr = getInitParameter("routingRuleInfo");
+
+		if (reqURI.equals("/front")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+
+			try {
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+
+		// /auth, 요청처리
+		else if (reqURI.equals("/auth")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+
+			try {
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+
+		// /auth/lgcns 요청처리
+		else if (reqURI.equals("/auth/lgcns")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+
+			try {
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+
+		// /notice 요청처리
+		else if (reqURI.equals("/notice")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+
+			try {
+				// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+				ContentResponse contentRes = MyUtils.requestByGetMethod(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+		}
+	}
+
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		String reqURI, routingRuleInfoStr, serviceURL = null;
+
+		System.out.println("[RequestURL] : "+ req.getRequestURL());
+		System.out.println("[RequestURI] : "+ req.getRequestURI());
+		System.out.println("[RoutingRuleInfo] : "+ getInitParameter("routingRuleInfo"));
+
+		// 요청URI 읽기
+		reqURI = req.getRequestURI(); //요청URI
+
+		// 초기파라미터로 설정한 값을 불러오기 : routing Info
+		routingRuleInfoStr = getInitParameter("routingRuleInfo");
+
+		if (reqURI.equals("/front")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+			
+			//request body 내용을 Json String 향태로 수신
+			String bodyStr = getHttpBodyInString(req);
+
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> bodyMap = MyUtils.convertFromJsonStringToMap(bodyStr);
+
+			// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+			try {
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();	
+			}
+
+		}else if (reqURI.equals("/auth")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+			
+			//request body 내용을 Json String 향태로 수신
+			String bodyStr = getHttpBodyInString(req);
+
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> bodyMap = MyUtils.convertFromJsonStringToMap(bodyStr);
+
+			try {
+
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+
+		}else if (reqURI.equals("/auth/lgcns")) {
+
+			serviceURL = findTargetServiceUrl(req,routingRuleInfoStr);
+			
+			//request body 내용을 Json String 향태로 수신
+			String bodyStr = getHttpBodyInString(req);
+
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> bodyMap = MyUtils.convertFromJsonStringToMap(bodyStr);
+
+			try {
+
+				ContentResponse contentRes = MyUtils.requestByPostMethodWithoutBody(serviceURL);
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				e.printStackTrace();	
+			}
+
+		}else {
+			System.out.println("잘못된 URI PATH");
+		}
+	}
+	
+	private String findTargetServiceUrl(HttpServletRequest req, String routingRuleInfoStr) throws IOException {
+
+		// 요청받은 URI를 KEY로 대상 Service URL정보를 ROUTING INFO 로 부터 찾아온다.
+		// URL 값의 첫번째만 가지고 서비스를 구분하여 제공한다.
+		String targetServiceURL = MyUtils.findTargetServiceUrl("/" + req.getRequestURI().toString().split("/")[1], routingRuleInfoStr);
+		
+		System.out.println("[TargetServiceURL] : " + targetServiceURL);
+
+		String serviceURL = targetServiceURL + req.getRequestURI();
+
+		//Query String 이 있는지 확인
+		if(null != req.getQueryString()) { 
+			//ex) http://127.0.0.1:5002/auth/lgcns?id=lgcns
+			//System.out.println("QUERY_STRING : " + req.getQueryString());
+			serviceURL = serviceURL + "?" + req.getQueryString();
+		}
+		System.out.println("[ServiceURL] : "+ serviceURL);
+
+		return serviceURL;
+	}
+	
+	private String getHttpBodyInString(HttpServletRequest request) throws IOException {
+		 
+	    String body = null;
+	    StringBuilder stringBuilder = new StringBuilder();
+	    BufferedReader bufferedReader = null;
+	
+	    try {
+	        InputStream inputStream = request.getInputStream();
+	        if (inputStream != null) {
+	            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+	            char[] charBuffer = new char[128];
+	            int bytesRead = -1;
+	            while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+	                stringBuilder.append(charBuffer, 0, bytesRead);
+	            }
+	        }
+	    } catch (IOException ex) {
+	        throw ex;
+	    } finally {
+	        if (bufferedReader != null) {
+	            try {
+	                bufferedReader.close();
+	            } catch (IOException ex) {
+	                throw ex;
+	            }
+	        }
+	    }
+	
+	    body = stringBuilder.toString();
+	    return body;
+	}
+}
