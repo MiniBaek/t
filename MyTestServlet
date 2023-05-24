@@ -1,0 +1,268 @@
+package com.test.server;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalTime;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
+
+import org.eclipse.jetty.client.api.ContentResponse;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.test.util.MyConvertor;
+import com.test.util.MyIoUtils;
+
+public class MyTestServlet extends HttpServlet {
+
+	/**********************************************************************************************************
+	 * [Get Method]
+	 * 1-1. 기본 요청1에 대한 응답 : Query String, Path Param 없음.
+	 * 1-2. 기본 요청2에 대한 응답 : Path Param 으로 요청 
+	 * 1-3. 기본 요청3에 대한 응답 : Query String으로 요청
+	 * 1-4. 파일 요청에 대한 응답 : 파일을 읽어서 응답 stream을 통해 제공. ServletOutputStream 이용
+	 * 1-5. 파일 요청에 대한 응답 : 파일을 읽어서 파일명과 파일을 오브젝트로 생성하여 stream을 통해 제공 : ObjectOutputStream
+	 * 
+	 * [Post Method]
+	 * 1. 기본 요청에 대한 응답
+	 * 2. Body를 이용한 요청에 대한 응답 : Body에 Json String 포함하여 요청
+	 **********************************************************************************************************/
+
+	/**
+	 * 1. Get Method 요청에 대한 응답처리
+	 */
+	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		System.out.println("[Request] : "+ req.getRequestURL());
+
+		String reqURI = req.getRequestURI(); //요청 URI
+		
+		// 1-1 : Get 방식 요청에 대한 처리 : 요청 파라미터 없음 : 응답 String
+		if (req.getRequestURI().equals("/requestDate")) {
+			res.setStatus(200);
+			res.getWriter().write(new Date().toString());
+		}
+
+		// 1-4 : Get 방식 요청에 대한 처리 : 요청 파라미터 없음
+		// 응답 : 파일을 읽어서 Byte[] 로 응답
+		else if (req.getRequestURI().equals("/requestFile")) {
+			File file = new File("C:\\mytest\\server\\image_test.png");
+			byte[] fileContent = Files.readAllBytes(file.toPath());
+			res.setStatus(200); 
+
+			ServletOutputStream stream = res.getOutputStream(); 
+			stream.flush();
+			stream.write(fileContent);
+			stream.flush();
+			stream.close();
+		}
+
+		// 1-5 : Get 방식 요청에 대한 처리 : 요청 파라미터 없음
+		// 응답 : 특정 디렉토리의 파일을 읽어서 Map에 담아서 ObjectOutputStream 이용해서 응답
+		else if (req.getRequestURI().equals("/requestFiles")) {
+
+			// 파일목록을 담을 Map
+			LinkedHashMap<String, byte[]> fileList = new LinkedHashMap<String, byte[]>();
+
+			// 특정 디렉토리에서 파일목록가져오기
+			File dir = new File("c://mytest/server");
+			File files[] = dir.listFiles();
+
+			// 파일목록을 MAP 에 담는다.
+			for(File file : files) {
+				Path  path = file.toPath();
+				byte[] fileContent = Files.readAllBytes(path);
+				fileList.put(file.getName(), fileContent);
+			}
+
+			// MAP을 ObjectOutputStream
+			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(byteOut);
+			out.writeObject(fileList);
+
+			// 응답상태설정
+			res.setStatus(200); 
+				
+			// ServletOutputStream
+			ServletOutputStream stream = res.getOutputStream(); 
+			stream.flush();
+			stream.write(byteOut.toByteArray());
+			stream.flush();
+			stream.close();
+		}
+	}
+
+	/**
+	 * 2. Client 의 POST Method를 통한 호출시 처리.
+	 */
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+		System.out.println("[Request] : "+ req.getRequestURL());
+
+		String reqURI = req.getRequestURI(); //요청 URI
+		
+		// Client 로 부터 받은 json Data 저장
+		if (reqURI.startsWith("/fileList")) {
+
+			File destFolder = new File("./OUTPUT");
+			if(!destFolder.exists()) {
+				destFolder.mkdirs(); 
+			}
+
+			LocalTime currentTime = LocalTime.now();
+			String fname = String.format(
+					"./OUTPUT/%02d%02d%02d.json", 
+					currentTime.getHour(),
+					currentTime.getMinute(), 
+					currentTime.getSecond());
+
+			PrintWriter printWriter = new PrintWriter(new FileWriter(new File(fname))); //서버에 저장할 파일
+			BufferedReader input = new BufferedReader(new InputStreamReader(req.getInputStream())); //실제 요청구문에서 Client가 보낸 파일 내용 읽기
+			String buffer;
+
+			while ((buffer = input.readLine()) != null) {
+				printWriter.print(buffer); //실제 파일에 쓰기
+			} 
+
+			input.close(); 
+			printWriter.close();
+			res.setStatus(200);
+			res.getWriter().write(fname + " saved!");
+		}
+
+		// KEY : 파일명, Value는 Json파일로 저장
+		else if (reqURI.equals("/fileList2")) {
+
+			Gson gson = new Gson();
+			System.out.println("Request : "+ req.getRequestURL());
+
+			File destFolder = new File("./SERVER");
+
+			if(!destFolder.exists()) {
+				destFolder.mkdirs(); 
+			}
+
+			BufferedReader input = new BufferedReader(new InputStreamReader(req.getInputStream()));
+			String buffer;
+			StringBuilder sb = new StringBuilder();
+
+			while ((buffer = input.readLine()) != null) {
+				sb.append(buffer + "\n");
+			}
+
+			String strBody = sb.toString();
+			input.close(); 
+
+			JsonObject jObj = gson.fromJson(strBody, JsonObject.class);
+			String fileName = jObj.get("FileName").getAsString();
+			String fileContent = jObj.get("FileContent").getAsString();
+
+			PrintWriter printWriter = new PrintWriter(new FileWriter(new File("./SERVER/"+fileName)));
+			printWriter.print(fileContent);
+			printWriter.close();
+
+			res.setStatus(200);
+			res.getWriter().write(fileName + " saved!"); 
+		}     
+
+		else if(reqURI.equals("/jsonfileList")) {
+
+			//request body 내용을 Json String 향태로 수신
+			String jsonStr = MyIoUtils.getHttpBodyInString(req);
+
+			// 수신한 JSON String을 Map으로변환한다.
+			Map<String, String> map = MyConvertor.convertFromJsonStringToMap(jsonStr);
+
+			// GET 방식으로 대상 URI에 요청하여 응답을 수신한다.
+			try {
+				String targetUri = "http://127.0.0.1:8081/front";
+				ContentResponse contentRes = MyIoUtils.requestByPostMethodWithoutBody(targetUri);
+
+				res.setStatus(contentRes.getStatus());
+				res.getWriter().write(contentRes.getContentAsString());
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();	
+			}
+
+		}else if (reqURI.equals("/upload")) {
+
+			try {
+
+				final Part filePart = req.getPart("file");
+			    final Collection<Part> fileParts = req.getParts();
+			    final String fileName = getFileName(filePart);
+
+			    OutputStream out = null;
+			    InputStream filecontent = null;
+			    final PrintWriter writer = res.getWriter();
+
+			    try {
+			        out = new FileOutputStream(new File("c://mytest/server/" + fileName));
+			        filecontent = filePart.getInputStream();
+
+			        int read = 0;
+			        final byte[] bytes = new byte[1024];
+
+			        while ((read = filecontent.read(bytes)) != -1) {
+			            out.write(bytes, 0, read);
+			        }
+			        System.out.println("File being uploaded to {1}");
+			    } catch (FileNotFoundException fne) {
+			        writer.println("You either did not specify a file to upload or are "
+			                + "trying to upload a file to a protected or nonexistent " + "location.");
+			        writer.println("<br/> ERROR: " + fne.getMessage());
+
+			        System.out.println("Problems during file upload");
+			        fne.printStackTrace();
+			    } finally {
+			        if (out != null) {
+			            out.close();
+			        }
+			        if (filecontent != null) {
+			            filecontent.close();
+			        }
+			        if (writer != null) {
+			            writer.close();
+			        }
+			    }
+
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+	}
+	
+	private String getFileName(final Part part) {
+	    final String partHeader = part.getHeader("content-disposition");
+	    System.out.println("Part Header = " + partHeader);
+	    for (String content : part.getHeader("content-disposition").split(";")) {
+	        if (content.trim().startsWith("filename")) {
+	            return content.substring(content.indexOf('=') + 1).trim().replace("\"", "");
+	        }
+	    }
+	    return null;
+	}
+}
