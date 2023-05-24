@@ -1,0 +1,143 @@
+package com.test.gson;
+
+import java.util.List;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+public class MyGsonTest {
+
+	public static void main(String[] args) {
+
+		MyGsonTest myGsonTest = new MyGsonTest();
+		myGsonTest.test1();
+		myGsonTest.test2();
+		myGsonTest.test3();
+	}
+
+	private void test1() {
+		
+		//Sting -> Object
+		String jsonStr11 = "{\r\n"
+				+ "\"id\": \"121217\",\r\n"
+				+ "\"name\": \"�����\",\r\n"
+				+ "\"age\": 10,\r\n"
+				+ "\"childrun\": null\r\n"
+				+ "							}";
+		
+		MyFamilyInfo myFamily11 = MyGsonUtils.convertFromStringToObjectForSingle(jsonStr11);
+		System.out.println("TEST1 : " + "id : " + myFamily11.getId()); 
+		System.out.println("TEST1 : " + "name : " + myFamily11.getName()); 
+		System.out.println("TEST1 : " + "age : " + myFamily11.getAge());
+		System.out.println("TEST1 : " + "age : " + myFamily11.getPId());
+		System.out.println("TEST1 : " + "age : " + myFamily11.getChildrun());
+		
+	}
+
+	private void test2() {
+		
+		String jsonMergeStr = null;
+		
+		//EX1-1
+		String id = "800808";
+		String name = "������";
+		int age = 41;
+		String pId = null;
+		List<MyFamilyInfo> childrun = null;
+		String jsonStr1 = MyGsonUtils.generateJsonStr(id, name, age, pId, childrun);
+		System.out.println("TEST2_1 : " + jsonStr1); //EX1_1 : {"id":"800808","name":"BAEK JONG MIN","age":41}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr1);
+		
+		//Ex1-2
+		MyFamilyInfo myFamily2 = new MyFamilyInfo("121217", "BAEK SEUNG JU", 10, "800808", null);
+		String jsonStr2 = MyGsonUtils.convertFromObjToStringForSingle(myFamily2);
+		System.out.println("TEST2_2 : " + jsonStr2); //EX1_2 : {"id":"121217","name":"BAEK SEUNG JU","age":10,"pId":"800808"}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr2);
+		
+		//Ex1-3
+		MyFamilyInfo myFamily3 = new MyFamilyInfo("150613", "BAEK SEUNG CHAN", 7, "800808", null);
+		String jsonStr3 = MyGsonUtils.convertFromObjToStringForSingle(myFamily3);
+		System.out.println("TEST2_3 : " + jsonStr3); //EX1_3 : {"id":"150613","name":"BAEK SEUNG CHAN","age":7,"pId":"800808"}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr3);
+		
+		//Ex1-4
+		MyFamilyInfo myFamily4 = new MyFamilyInfo("121213", "SON DA HAE", 40, null, null);
+		String jsonStr4 = MyGsonUtils.convertFromObjToStringForSingle(myFamily4);
+		System.out.println("TEST2_4 : " + jsonStr4); //EX1_4 : {"id":"121213","name":"SON DA HAE", "age":40}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr4);
+		
+		//Ex1-5
+		MyFamilyInfo myFamily5 = new MyFamilyInfo("121214", "손딸래미", 2, "121213", null);
+		String jsonStr5 = MyGsonUtils.convertFromObjToStringForSingle(myFamily5);
+		System.out.println("TEST2_5 : " + jsonStr4); //EX1_4 : {"id":"121213","name":"손딸래미","age":40}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr5);
+		
+		//Ex1-5
+		MyFamilyInfo myFamily6 = new MyFamilyInfo("121215", "백성주", 3, "121217", null);
+		String jsonStr6 = MyGsonUtils.convertFromObjToStringForSingle(myFamily6);
+		System.out.println("TEST2_6 : " + jsonStr4); //EX1_4 : {"id":"121213","name":"�մٿ�","age":40}
+		jsonMergeStr = MyGsonUtils.mergeJsonStr(jsonMergeStr, jsonStr6);
+		
+		//Ex2
+		System.out.println("TEST2 : " + jsonMergeStr); 
+		//EX2 : {"myFamilyList":[{"id":"800808","name":"������","age":41,"childrun":[{"id":"121217","name":"�����","age":10,"pId":"800808"},{"id":"150613","name":"�����","age":7,"pId":"800808"}]},{"id":"121213","name":"�մٿ�","age":40}]}
+				
+	}
+	
+	private void test3() {
+		// TODO Auto-generated method stub
+		MyGsonUtils myGsonUtils = new MyGsonUtils();
+		Gson gson = new GsonBuilder()
+			    .setPrettyPrinting()
+			    .create();
+		
+		TraceResult trace;
+		String jsonStr = "";
+		
+		trace = new TraceResult("1", "200", null);
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "1", new TraceResult("1-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "1-1", new TraceResult("2", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "2", new TraceResult("2-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "2", new TraceResult("2-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "2-1", new TraceResult("2-1-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "1-1", new TraceResult("3-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.addTrace(trace, "3-1", new TraceResult("3-1-1", "200", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+		
+		trace = gson.fromJson(jsonStr, TraceResult.class);
+		myGsonUtils.modifyTraceStart(trace, new TraceResult("2", "500", null));
+		jsonStr = gson.toJson(trace);
+		System.out.println(jsonStr+"\n\n");
+
+	}
+
+}
