@@ -1,0 +1,58 @@
+package com.test.server;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
+public class MyTestServer {
+
+	public static void main(String[] args) throws Exception {
+		
+		MyTestServer myTestServer = new MyTestServer();
+		
+		//미리 로딩할 부분이 있으면 여기서 구현 : 파일읽기 등등
+		
+		// 서버기동 : Parameter : Port
+		int port = 0;;
+		try {
+			if(null != args[0]) {
+				port = Integer.parseInt(args[0]); //프로그램 실행시 파라미터로 Port를 받은경우.
+			}
+		} catch (Exception e) {
+			port = 8080;
+		}
+		
+		String initParam = "Test Server"; //필요시 Json String 이나 오브젝트로 구성해도됨.
+		myTestServer.start(port, initParam);
+	}
+
+	public void start(int port, String serverConf) {
+
+		try {
+			//서버 인스턴스 생성	
+			Server server = new Server();
+			ServerConnector http = new ServerConnector(server);
+			http.setHost("127.0.0.1");
+			http.setPort(port);
+			server.addConnector(http);
+
+			ServletHandler servletHandler = new ServletHandler();
+
+			// Servlet Mapping 1 : ServletHolder 이용
+			ServletHolder myServletHolder = new ServletHolder(MyTestServlet.class); // Servlet Class를 ServletHolder 에 등록
+			myServletHolder.setInitParameter("server_name", serverConf); 		// Servlet 초기화시 필요한 파라미터가 있으면 이를 통해 담음.
+			servletHandler.addServletWithMapping(myServletHolder, "/"); 		// ServletHolder를 Path 와 함께 핸들러에 등록.
+			
+			// Servlet Mapping 2 : ServletClass 바로 등록
+			//servletHandler.addServletWithMapping(MyTotalServlet.class, "/");
+			
+			server.setHandler(servletHandler);
+			server.start();
+			server.join();
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
+	}
+}
