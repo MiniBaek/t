@@ -1,28 +1,38 @@
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
 public class MyTestMain {
 
 	public static void main(String[] args) throws InterruptedException  {
 
 		MyTestMain myTestMain = new MyTestMain();
+		
 		try {
-
-			// Routinf Rule 파일을 읽기
-			RoutingRuleInfo routingRuleInfo = MyUtils.readRoutingRuleFile(args[0]); //파일명 : <Proxy Name>.json
-
-			//서버시작
-			myTestMain.start(routingRuleInfo.getPort(), routingRuleInfo, 1);
+			// Routing Info 파일을 읽기
+			String fileContents= MyUtils.readAllOfFile(args[0]); //파일명 : <Proxy Name>.json
+			
+			// Routing Info 파일에서 Port번호를 읽어온다.
+			int port = MyUtils.convertToObjectFromString(fileContents, RoutingRuleInfo.class).getPort();
+			
+			// 서버시작(Parameter : Port 번호)
+			myTestMain.start(port, fileContents);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void start(int port, RoutingRuleInfo routingRuleInfo, int pattern) throws Exception {	
+	/**
+	 * 서버시작
+	 * @param port : 포트번호
+	 * @param routingRuleInfo : 파일로 부터 읽은 설정 파일정보
+	 * @throws Exception
+	 */
+	public void start(int port, String routingRuleInfo) throws Exception {	
 
-		//서버 인스턴스 생성
+		//서버 인스턴스 생성	
 		Server server = new Server();
 		ServerConnector http = new ServerConnector(server);
 		http.setHost("127.0.0.1");
@@ -31,25 +41,14 @@ public class MyTestMain {
 
 		ServletHandler servletHandler = new ServletHandler();
 
-		if(1 == pattern) {
-			servletHandler.addServletWithMapping(MyTotalServlet.class, "/");
-		}else {
-			//서버의 prefix 에 따라 필요한 Servlet 을 추가한다.
-			for(int i=0 ; i<routingRuleInfo.getRoutes().size() ; i++) {
-
-				// prefix = /front : /front 서비스처리 Servlet 추가
-				if(routingRuleInfo.getRoutes().get(i).getPathPrefix().contains("/front")) {
-					servletHandler.addServletWithMapping(MyFrontServlet.class, "/front");	
-				}
-
-				// prefix = /auth : /auth 서비스처리 Servlet 추가
-				if(routingRuleInfo.getRoutes().get(i).getPathPrefix().contains("/auth")) {
-					servletHandler.addServletWithMapping(MyAuthServlet.class, "/auth");
-					servletHandler.addServletWithMapping(MyAuthServlet.class, "/auth/lgcns");
-				}
-			}	
-		}
-
+		// 서블릿 등록 방법 1 : Servlet Class 를 Path와 함꼐 직접등록.
+		//servletHandler.addServletWithMapping(MyTotalServlet.class, "/");
+		
+		// 서블릿 등록 방법 2 : ServletHolder 를 통해 Servlet Class를 등록 : 서블릿생성시 초기 파리미터를 넘겨줄때 사용.
+		ServletHolder myServletHolder = new ServletHolder(MyServlet.class); //서블릿클래스를 Holder 에 등록
+		myServletHolder.setInitParameter("routingRuleInfo", routingRuleInfo); //파일로 읽은 문자열을 초기 파라메터로 증록
+		servletHandler.addServletWithMapping(myServletHolder, "/"); //ServletHolder를 핸들러에 등록.
+		
 		server.setHandler(servletHandler);
 		server.start();
 		server.join();
