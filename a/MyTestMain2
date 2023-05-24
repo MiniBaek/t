@@ -1,0 +1,58 @@
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+public class MyTestMain {
+
+	static String proxyName = null;
+	
+	public static void main(String[] args) throws IOException {
+		
+		while(true) {
+			Scanner scanner = new Scanner(System.in);
+
+			System.out.println("Input Proxy Name and Path");
+			String command = scanner.nextLine();
+			
+			//명령어 파싱 : <Proxy Name> + “ “(공백) + <Path> : EX)Proxy-2 /notice
+			String proxyName = command.split(" ")[0];
+			String path = command.split(" ")[1];
+			
+			do {
+				proxyName = callProxyInfo(proxyName, path);
+			} while (proxyName != null);
+		}
+	}
+	
+	private static String callProxyInfo(String proxyName, String path) throws IOException {
+		
+		List<String> proxyList = MyUtils.readLineOfFile(proxyName);
+		String result = null;
+		
+		for(int i = 0 ; i<proxyList.size() ; i++) {
+			
+			// Proxy별 명령어 파싱 : /front#Proxy-1.txt
+			String proxyPath = proxyList.get(i).split("#")[0];
+			String type = proxyList.get(i).split("#")[1];
+			
+			if(proxyPath.equals(path)) { //Call한 Path 와 ProxyPath가 동일하면
+				
+				if(type.startsWith("Service")) { //type : 서비스 : 서비스호출
+					callService(type);
+				}else if(type.startsWith("Proxy")) { //type : Proxy : Proxy호출
+					result = type;
+					break;
+				}
+			}
+		}
+		return result;
+	}
+	
+	private static void callService(String type) throws IOException {
+		List<String> serviceList = MyUtils.readLineOfFile(type);
+		for(int i=0 ; i<serviceList.size() ; i++) {
+			System.out.println(serviceList.get(i));
+		}
+	}
+}
