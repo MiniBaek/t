@@ -1,0 +1,59 @@
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletHandler;
+
+public class MyTestMain {
+
+	public static void main(String[] args) throws InterruptedException  {
+
+		MyTestMain myTestMain = new MyTestMain();
+		try {
+
+			// Routinf Rule 파일을 읽기
+			RoutingRuleInfo routingRuleInfo = MyUtils.readRoutingRuleFile(args[0]); //파일명 : <Proxy Name>.json
+
+			//서버시작
+			myTestMain.start(routingRuleInfo.getPort(), routingRuleInfo, 1);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void start(int port, RoutingRuleInfo routingRuleInfo, int pattern) throws Exception {	
+
+		//서버 인스턴스 생성
+		Server server = new Server();
+		ServerConnector http = new ServerConnector(server);
+		http.setHost("127.0.0.1");
+		http.setPort(port);
+		server.addConnector(http);
+
+		ServletHandler servletHandler = new ServletHandler();
+
+		if(1 == pattern) {
+			servletHandler.addServletWithMapping(MyTotalServlet.class, "/");
+		}else {
+			//서버의 prefix 에 따라 필요한 Servlet 을 추가한다.
+			for(int i=0 ; i<routingRuleInfo.getRoutes().size() ; i++) {
+
+				// prefix = /front : /front 서비스처리 Servlet 추가
+				if(routingRuleInfo.getRoutes().get(i).getPathPrefix().contains("/front")) {
+					servletHandler.addServletWithMapping(MyFrontServlet.class, "/front");	
+				}
+
+				// prefix = /auth : /auth 서비스처리 Servlet 추가
+				if(routingRuleInfo.getRoutes().get(i).getPathPrefix().contains("/auth")) {
+					servletHandler.addServletWithMapping(MyAuthServlet.class, "/auth");
+					servletHandler.addServletWithMapping(MyAuthServlet.class, "/auth/lgcns");
+				}
+			}	
+		}
+
+		server.setHandler(servletHandler);
+		server.start();
+		server.join();
+
+	}
+
+}
