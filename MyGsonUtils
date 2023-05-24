@@ -1,0 +1,388 @@
+package com.test.gson;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
+public class MyGsonUtils {
+
+	/**
+	 * 파일을 라인별로 읽는다
+	 * @param fileName
+	 * @return 라인별로 읽은 문자열을 Merge 에서 문자열로 반환
+	 * @throws IOException
+	 */
+	public static String readAllOfFile(String fileName) throws IOException{
+
+		String str;
+		StringBuffer sb = new StringBuffer();
+		BufferedReader reader = new BufferedReader(new FileReader(fileName));
+		while ((str = reader.readLine()) != null) {
+			sb.append(str);
+		}
+		reader.close();
+
+		return sb.toString();
+	}
+	
+	/**
+	 * 파일 쓰기
+	 * @param fileName
+	 * @param targetContents
+	 * @param mode
+	 * @throws IOException
+	 */
+	public static void wirteFile(String fileName, String targetContents, boolean mode) throws IOException{
+
+		File file = new File(fileName);
+
+		try {
+			FileWriter writer = new FileWriter(file,true);
+			writer.write(targetContents);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * 파일쓰기
+	 * @param fileName
+	 * @param targetContents
+	 * @throws IOException
+	 */
+	public static void wirteFile(String fileName, String targetContents) throws IOException{
+
+		File file = new File(fileName);
+
+		try {
+			FileWriter writer = new FileWriter(file,false);
+			writer.write(targetContents);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Json String
+	 * @param jsonStr1
+	 * @param jsonStr2
+	 * @return
+	 */
+	public static String mergeJsonStr(String jsonStr1, String jsonStr2) {
+		
+		Gson gson = new Gson();
+		
+		MyFamilyList familyList = null;
+		MyFamilyInfo family = gson.fromJson(jsonStr2, MyFamilyInfo.class); //json String -> MyFamily Object
+		
+		if(null == jsonStr1) {
+			List<MyFamilyInfo> myFamilyList = new ArrayList<MyFamilyInfo>(); 
+			myFamilyList.add(family); 
+			familyList = new MyFamilyList(myFamilyList); 
+			
+		}else { 			
+			// Json String -> Object(MyFamilyList.class)
+			familyList = gson.fromJson(jsonStr1, MyFamilyList.class); 
+			
+			// 전체목록에 추가
+			List<MyFamilyInfo> nowFamilyList = familyList.getMyFamilyList();
+			
+			boolean isRegister = false; 
+			for(MyFamilyInfo mf : nowFamilyList) { //���� MyFamily ����߿��� �ű� ����� �θ� �ִ��� �˻�
+				
+				List<MyFamilyInfo> nowChildrunList; //�ڽĸ��
+				if(mf.getId().equals(family.getPId())) { //���� MyFamily�� �űԵ�ϴ���� �θ��̸�.
+					isRegister = true; 
+					nowChildrunList = mf.getChildrun(); //���� MyFamily �� �ڽĸ�� ����
+					
+					if(null != nowChildrunList && nowChildrunList.size() > 0) { //���� MyFamily �� �ڽ��� �ִ��� Ȯ��
+						boolean isExist = false;
+						for(MyFamilyInfo child : nowChildrunList) {
+							if(child.getId().equals(family.getId())) {
+								isExist = true;
+								break;
+							}
+						}
+						if(!isExist) {
+							nowChildrunList.add(family); //�ڽĸ�Ͽ� �űԸ�� �߰�
+						}
+					}else { //���� �ڽĸ���� ��� �űԸ�� �ۼ�
+						nowChildrunList = new ArrayList<MyFamilyInfo>();
+						nowChildrunList.add(family);
+					}
+					
+					mf.setFamilyList(nowChildrunList);
+					break;
+				}
+			}
+			
+			if(!isRegister) {
+				nowFamilyList.add(family);
+			}
+			
+			familyList.setMyFamilyList(nowFamilyList);			
+		}
+		
+		String familyListStr = gson.toJson(familyList);
+		
+		return familyListStr;
+	}
+
+	/**
+	 * Generate : �������� ������ Json Object�� �����ѵ�, Json String���� ��ȯ
+	 * @param id
+	 * @param name
+	 * @param age
+	 * @param pId
+	 * @param childrun
+	 * @return
+	 */
+	public static String generateJsonStr(String id, String name, int age, String pId, List<MyFamilyInfo> childrun) {
+
+		JsonObject JsonObject = generateJsonObject(id, name, age, pId, childrun);
+		Gson gson = new Gson();
+		
+		String jsonStr = gson.toJson(JsonObject);
+		return jsonStr;
+	}
+	
+	/**
+	 * Generate : �������� ������ Json Object�� ����
+	 * @param id
+	 * @param name
+	 * @param age
+	 * @param pId
+	 * @param childrun
+	 * @return
+	 */
+	public static JsonObject generateJsonObject(String id, String name, int age, String pId, List<MyFamilyInfo> childrun) {
+
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty("id", id);
+		jsonObject.addProperty("name", name);
+		jsonObject.addProperty("age", age);
+		jsonObject.addProperty("pId", pId);
+		
+		return jsonObject;
+	}
+
+	/**
+	 * Convert : Custom Object -> Json String
+	 * @param myFamily
+	 * @return
+	 */
+	public static String convertFromObjToStringForSingle(MyFamilyInfo myFamily) {
+		
+		String jsonStr = "";
+		
+		Gson gson = new Gson();
+		jsonStr = gson.toJson(myFamily);
+		
+		return jsonStr;
+		
+	}
+
+	/**
+	 * Convert : Json String -> Custom Object
+	 * @param jsonStr
+	 * @return
+	 */
+	public static MyFamilyInfo convertFromStringToObjectForSingle(String jsonStr) {
+		
+		Gson gson = new Gson();
+		MyFamilyInfo myFamily = gson.fromJson(jsonStr, MyFamilyInfo.class);
+		return myFamily;
+		
+	}
+	
+	/**
+	 * Trace Result 출력
+	 * @param traceResult
+	 */
+	public static void printTraceResult(TraceResult traceResult) {
+		Gson gson = new Gson();
+		String jsonStr = gson.toJson(traceResult);
+		System.out.println("TRACE : " + jsonStr);
+	}
+
+	/**
+	 * Recursive 형태의 오브젝트를 찾아서 업데이트
+	 * @param traceResult
+	 * @param key
+	 * @param newTrace
+	 */
+	public static void updateTraceResult(TraceResult traceResult, String key, TraceResult newTrace) {
+		if(traceResult.getTarget().equals(key)) {
+			if(!traceResult.getTarget().equals(newTrace.getTarget())) {
+
+				if(null == traceResult.getServices()) {
+					List<TraceResult> serviceList = new ArrayList<TraceResult>();
+					serviceList.add(newTrace);
+					traceResult.setServices(serviceList);
+				}else {
+					if(isDupCheck(traceResult.getServices(),newTrace)) {
+						//System.out.println("이미존재함");
+					}else {
+						traceResult.getServices().add(newTrace);
+					}
+				}
+			}
+		}else {
+			if(null != traceResult.getServices()) {
+				for(TraceResult service : traceResult.getServices()) {
+					updateTraceResult(service, key, newTrace);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Recursive 형태의 오브젝트를 찾아서 업데이트
+	 * @param traceResult
+	 * @param modifiedTrace
+	 */
+	private static void updateStatusOfTraceResult(TraceResult traceResult, TraceResult modifiedTrace) {
+		if(traceResult.getTarget().equals(modifiedTrace.getTarget())) {
+			traceResult.setStatus(modifiedTrace.getStatus());
+		}else {
+			if(null != traceResult.getServices()) {
+				for(TraceResult service : traceResult.getServices()) {
+					updateStatusOfTraceResult(service, modifiedTrace);
+				}
+			}
+		}
+	}
+
+	public static boolean isDupCheck(List<TraceResult> services, TraceResult newTrace) {
+		// TODO Auto-generated method stub
+		for(TraceResult tr : services) {
+			if(tr.getTarget().equals(newTrace.getTarget())) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public synchronized static String addNewTraceResult(String requestId, String lastReqUrl, TraceResult newTrace) {
+
+		Gson gson = new GsonBuilder()
+				.setPrettyPrinting()
+				.create();
+
+		String fileName = "c://tmp/history_" + requestId + ".json";
+		String historyFileStr = null;
+
+		try {
+
+			historyFileStr = readAllOfFile(fileName);
+			//System.out.println("현재 파일 내용 : " + historyFileStr);
+
+			if(historyFileStr.length() == 0) {
+				throw new Exception();
+			}
+		} catch (Exception e) {
+			//e.printStackTrace();
+			historyFileStr = null;
+		}
+
+		if(null == historyFileStr) {
+			//신규생성
+			historyFileStr = gson.toJson(newTrace);
+		}else {
+			TraceResult traceResult = gson.fromJson(historyFileStr, TraceResult.class);
+			updateTraceResult(traceResult, lastReqUrl, newTrace);
+			historyFileStr = gson.toJson(traceResult);
+		}
+
+		try {
+			if(null != historyFileStr && historyFileStr.length() > 0) {
+				wirteFile(fileName, historyFileStr);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		}
+
+		//System.out.println("파일에 쓸내용 : " + historyFileStr);
+		return historyFileStr;
+	}
+
+	public synchronized static String updateStatusOfTraceResult(String requestId, TraceResult modifiedTrace) {
+
+		Gson gson = new GsonBuilder()
+				.setPrettyPrinting()
+				.create();
+
+		String fileName = "c://tmp/history_" + requestId + ".json";
+
+		String historyFileStr = null;
+		try {
+
+			historyFileStr = readAllOfFile(fileName);
+			System.out.println("현재 파일 내용 : " + historyFileStr);
+
+			if(historyFileStr.length() == 0) {
+				throw new Exception();
+			}
+		} catch (Exception e) {
+			//e.printStackTrace();
+			historyFileStr = null;
+		}
+
+		if(null == historyFileStr) {
+			//신규생성
+			historyFileStr = gson.toJson(modifiedTrace);
+		}else {
+			TraceResult traceResult = gson.fromJson(historyFileStr, TraceResult.class);
+			updateStatusOfTraceResult(traceResult, modifiedTrace);
+			historyFileStr = gson.toJson(traceResult);
+		}
+
+		try {
+			if(null != historyFileStr && historyFileStr.length() > 0) {
+				wirteFile(fileName, historyFileStr);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		}
+
+		//System.out.println("파일에 쓸내용 : " + historyFileStr);
+		return historyFileStr;
+	}
+	
+	public void addTrace(TraceResult trace, String key, TraceResult tr) {
+		
+		TraceResult traceResult = trace;
+		updateTraceResult(traceResult, key, tr);
+	}
+	
+	public void modifyTraceStart(TraceResult trace, TraceResult modifiedTrace) {
+		
+		TraceResult traceResult = trace;
+		modifyTrace(traceResult, modifiedTrace);
+	}
+	
+	private void modifyTrace(TraceResult traceResult, TraceResult newTrace) {
+		if(traceResult.getTarget().equals(newTrace.getTarget())) {
+			traceResult.setStatus(newTrace.getStatus());
+		}else {
+			if(null != traceResult.getServices()) {
+				for(TraceResult service : traceResult.getServices()) {
+					modifyTrace(service, newTrace);
+				}
+			}
+		}
+	}
+
+}
