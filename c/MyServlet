@@ -1,0 +1,213 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+public class MyServlet extends HttpServlet{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	MyUtils util = new MyUtils();
+	public static Map<String,LimitedQueue> queueMap = new HashMap<String, LimitedQueue>();
+	
+	protected void doGet(HttpServletRequest req, HttpServletResponse res){
+
+		try {
+			
+			String reqURI = null;
+			System.out.println("[RequestURL] : "+ req.getRequestURL());
+
+			// 요청URI 읽기
+			reqURI = req.getRequestURI(); //요청URI
+			String queueName = reqURI.split("/")[2];
+			
+			if (reqURI.startsWith("/RECEIVE")) {
+				String result = receiveQueue(queueName);
+				res.setStatus(200);
+				res.getWriter().write(result);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			// TODO: handle exception
+		}
+		
+	}
+
+	protected void doPost(HttpServletRequest req, HttpServletResponse res) {
+
+		try {
+			String reqURI = null;
+
+			System.out.println("[RequestURL] : "+ req.getRequestURL());
+
+			// 요청URI 읽기
+			reqURI = req.getRequestURI(); //요청URI	
+			String queueName = reqURI.split("/")[2];
+			System.out.println("QNAME : " + queueName + " : " + queueName.length());
+			
+			// request body 내용을 Json String 향태로 수신
+			String bodyStr = getHttpBodyInString(req);
+			System.out.println("bodyStr : " + bodyStr);
+			Map<String, Object> bodyMap = new HashMap<String, Object>();
+			bodyMap = util.convertFromJsonStringToMap(bodyStr);
+
+			if (reqURI.startsWith("/CREATE")) {
+				
+				int queueSize = (int)Double.parseDouble(bodyMap.get("QueueSize").toString());
+				String result = createQueue(queueName, queueSize);
+				res.setStatus(200);
+				res.getWriter().write(result);
+				
+			}else if (reqURI.startsWith("/SEND")) {
+
+				String message = bodyMap.get("Message").toString();
+				String result = sendQueue(queueName, message);
+				res.setStatus(200);
+				res.getWriter().write(result);
+
+			}else if (reqURI.startsWith("/ACK")) {
+				String messageId = reqURI.split("/")[3];
+				
+				//해당 messageId 삭제
+				String result = confirmMessage(queueName, messageId);
+				res.setStatus(200);
+				res.getWriter().write(result);
+
+			}else if (reqURI.startsWith("/FAIL")) {
+				String messageId = reqURI.split("/")[3];
+				
+				//messageId 복원
+				String result = recoveryMessage(queueName,messageId);
+				res.setStatus(200);
+				res.getWriter().write(result);
+				
+			}else {
+				System.out.println("잘못된 URI PATH : " + reqURI);
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private String recoveryMessage(String queueName, String messageId) {
+		// TODO Auto-generated method stub
+		String result = "OK";
+		if(null != queueMap.get(queueName)) {
+			System.out.println("Q Size : " + queueName + " : " + queueMap.get(queueName).getQueue().size());
+			result = queueMap.get(queueName).recovery(messageId);
+		}else {
+			result = "Not found Queue";
+		}
+		String jsonStr = util.convertResulttoJsonString(result);
+		return jsonStr;
+	}
+
+	private String confirmMessage(String queueName, String messageId) {
+		String result = "OK";
+		if(null != queueMap.get(queueName)) {
+			System.out.println("Q Size : " + queueName + " : " + queueMap.get(queueName).getQueue().size());
+			result = queueMap.get(queueName).subConfirm(messageId,queueName);
+		}else {
+			result = "Not found Queue";
+		}
+		String jsonStr = util.convertResulttoJsonString(result);
+		return jsonStr;
+	}
+
+	private String createQueue(String queueName, int queueSize) {
+		
+		String result = "OK";
+		if(null == queueMap.get(queueName)) {
+			LimitedQueue queue = new LimitedQueue(queueSize);
+			queueMap.put(queueName, queue);
+			System.out.println("Q Size : " + queueName + " : " + queueMap.get(queueName).getQueue().size());
+		}else {
+			result = "Queue Exist";
+		}
+		
+		String jsonStr = util.convertResulttoJsonString(result);
+		
+		return jsonStr;
+	}
+	
+	private String sendQueue(String queueName, String message) {
+		
+		String result = "OK";
+		if(null == queueMap.get(queueName)) {
+			result = "Queue Not Exist";
+		}else {
+			result = queueMap.get(queueName).add(message);
+			System.out.println("Q Size : " + queueName + " : " + queueMap.get(queueName).getQueue().size());
+		}
+		
+		String jsonStr = util.convertResulttoJsonString(result);
+		
+		return jsonStr;
+	}
+	
+	private String receiveQueue(String queueName) {	
+		
+		String result = "OK";
+		String message = null;
+		String jsonStr = null;
+		
+		if(null == queueMap.get(queueName)) {
+			result = "Queue Not Exist";
+			jsonStr = util.convertResulttoJsonString(result);
+		}else {
+			message = queueMap.get(queueName).sub();
+			if(null == message) {
+				result = "No Message";
+				jsonStr = util.convertResulttoJsonString(result);
+			}else {
+				System.out.println("Q Size : " + queueName + " : " + queueMap.get(queueName).getQueue().size());
+				jsonStr = util.convertResulttoJsonString(result, message.split("#")[1], message);
+			}
+		}
+		
+		return jsonStr;
+	}
+
+	private String getHttpBodyInString(HttpServletRequest request) throws IOException {
+		 
+	    String body = null;
+	    StringBuilder stringBuilder = new StringBuilder();
+	    BufferedReader bufferedReader = null;
+	
+	    try {
+	        InputStream inputStream = request.getInputStream();
+	        if (inputStream != null) {
+	            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+	            char[] charBuffer = new char[128];
+	            int bytesRead = -1;
+	            while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+	                stringBuilder.append(charBuffer, 0, bytesRead);
+	            }
+	        }
+	    } catch (IOException ex) {
+	        throw ex;
+	    } finally {
+	        if (bufferedReader != null) {
+	            try {
+	                bufferedReader.close();
+	            } catch (IOException ex) {
+	                throw ex;
+	            }
+	        }
+	    }
+	
+	    body = stringBuilder.toString();
+	    return body;
+	}
+}
