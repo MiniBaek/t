@@ -1,0 +1,51 @@
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
+public class MyTestMain {
+
+	public static void main(String[] args) throws InterruptedException  {
+
+		MyTestMain myTestMain = new MyTestMain();
+		try {
+
+			// Routinf Rule 파일을 읽기
+			String fileContents= MyUtils.readAllOfFile(args[0]); //파일명 : <Proxy Name>.json
+			int port = MyUtils.convertToObjectFromString(fileContents).getPort();
+			
+			//서버시작
+			myTestMain.start(port, fileContents);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void start(int port, String routingRuleInfo) throws Exception {	
+
+		//서버 인스턴스 생성	
+		Server server = new Server();
+		ServerConnector http = new ServerConnector(server);
+		http.setHost("127.0.0.1");
+		http.setPort(port);
+		server.addConnector(http);
+
+		ServletHandler servletHandler = new ServletHandler();
+
+		//Servelt 에 Routing정보를 넘기기 위해서 ServletHolder 으로 서블릿등록.
+		ServletHolder myServletHolder = new ServletHolder(MyServlet.class); //서블릿클래스를 Holser 에 등록
+		myServletHolder.setInitParameter("routingRuleInfo", routingRuleInfo); //파일로 읽은 문자열
+		servletHandler.addServletWithMapping(myServletHolder, "/"); //ServletHolder를 핸들러에 등록.
+		
+		//servletHandler.addServletWithMapping(MyTotalServlet.class, "/");
+		
+		server.setHandler(servletHandler);
+		server.start();
+		server.join();
+
+	}
+
+}
+
+
