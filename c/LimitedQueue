@@ -1,0 +1,103 @@
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Stack;
+
+public class LimitedQueue {
+
+	/**
+	 * 
+	 */
+	private int limit;
+	private LinkedList<String> queue;
+	private Map<String, String> backup;
+
+	public LimitedQueue(int limit) {
+		super();
+		this.limit = limit;
+		this.queue = new LinkedList<String>();
+		this.backup = new HashMap<String,String>();
+	}
+	
+    public String add(String message) {
+    	String result = "Fail";
+		if(this.queue.size() >= limit) {
+			return "Queue Full";
+		}else {
+			if(this.queue.add(message)) {
+				System.out.println("s : " + message);
+				System.out.println("size : " + this.queue.size());
+				result = "OK";
+			}
+		}
+        return result;
+    }
+    
+    public String sub() {
+		
+    	Stack<String> stack = new Stack<String>();
+    	
+    	String message = null;
+    	String backupMessage = null;
+    	if(this.queue.isEmpty()) {
+    		return null;
+    	}
+    	do {
+    		message = this.queue.poll();
+    		if(null == message) {
+    			return null;
+    		}
+    		stack.push(message);
+    		backupMessage = this.backup.get(message.split("#")[1]);
+		} while (null != backupMessage);
+    	
+    	backup.put(message.split("#")[1], message);
+    	//System.out.println(stack.isEmpty());
+    	while(!stack.isEmpty()) {
+    		backupMessage = stack.pop();
+    		this.queue.addFirst(backupMessage);
+    	}
+    	System.out.println("r : " + message);
+    	System.out.println("size : " + this.queue.size());
+        return message;
+    }
+    
+    public String recovery(String messageId) {
+		
+    	this.backup.remove(messageId);
+    	return "OK";
+    }
+    
+    public String subConfirm(String messageId, String name) {
+    	System.out.println("CONFIRM : " + name + " : " + this.queue.size());
+    	String message = this.backup.get(messageId);
+    	System.out.println("a message : " + name + " : " + message);
+    	for(String q : this.queue) {
+    		System.out.println("a queue : " + name + " " + q);
+    	}
+    	
+    	boolean index = this.queue.remove(message);
+    	System.out.println("a remove : " + name + " : " + index);
+    	//this.queue.remove(index);
+    	this.backup.remove(messageId);
+    	return "OK";
+    }
+
+	public int getLimit() {
+		return limit;
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
+	}
+
+	public LinkedList<String> getQueue() {
+		return queue;
+	}
+
+	public void setQueue(LinkedList<String> queue) {
+		this.queue = queue;
+	}
+    
+    
+}
