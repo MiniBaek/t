@@ -1,0 +1,38 @@
+//디바이스에게 보낼 forwardCommand 찾기
+			String forwardCommand = null;
+			for(Map<String, String> map : serverCommandInfo.getServerCommandInfo()) {
+				if(null != map.get("command")) {
+					if(map.get("command").startsWith(serverRequestInfo.getCommand())) {
+						forwardCommand = map.get("forward_command");
+						break;
+					}
+				}
+			}
+			
+			//대상장비에 보낼 메시지 작성 : forwardComand#param
+			String deviceRequestInfoJson = MyUtils.createRequestInfo(forwardCommand, serverRequestInfo.getParam());
+			
+			List<String> deviceResultList = new ArrayList<String>();
+			
+			// 대상장비별 처리
+			for(String device : serverRequestInfo.getTargetDevices()) {
+				
+				String hostName = null;
+				String port = null;
+				for(Map<String, String> map : deviceInfo.getDeviceInfo()) {
+					if(device.equals(map.get("device")) ) {
+						hostName = map.get("hostName");
+						port = map.get("port");
+						break;
+					}
+				}
+				String deviceUrl = "http://" + hostName + ":" + port + "/" + "fromNode";
+				System.out.println(deviceUrl);
+
+				// 호출
+				ContentResponse contentResponse = MyUtils.callDevice(deviceUrl, HttpMethod.POST, deviceRequestInfoJson);
+				
+				// 디바이스응답처리
+				DeviceResponse deviceResult = MyUtils.convertDevieResult(contentResponse.getContentAsString());
+				deviceResultList.add(deviceResult.getResult());
+			}
